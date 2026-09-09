@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>LOS SANTOS: 3D Grand Action (GTA 5 HTML Edition)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <div id="game-container">
+    <!-- 3D WebGL Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+      <div class="loading-bg-art"></div>
+      <div class="loading-header">
+        <div class="gta-logo">grand theft auto <span class="five">V</span></div>
+        <div class="loading-subtitle">Los Santos 3D HTML Remake</div>
+      </div>
+      <div class="loading-center">
+        <div class="loading-tip-title" id="loading-tip-title">LOS SANTOS 欢迎你</div>
+        <div class="loading-tip-text" id="loading-tip-text">
+          洛圣都：一座阳光灿烂的现代大都市。驾驶超跑驰骋在藤蔓大道，体验全套武器、载具物理、警匪追逐与四大故事任务！
+        </div>
+        <button id="start-game-btn" class="start-btn">进入洛圣都 (START GAME)</button>
+      </div>
+      <div class="loading-footer">
+        <div class="loading-bar-container">
+          <div class="loading-bar" id="loading-progress-bar"></div>
+        </div>
+        <div class="loading-status-row">
+          <span id="loading-status-text">正在生成洛圣都街区与物理引擎...</span>
+          <span id="loading-percentage">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- IN-GAME HUD -->
+    <div id="hud">
+      <!-- Top Right Stats -->
+      <div class="hud-top-right">
+        <div class="money-display" id="hud-money">$1,500,000</div>
+        <div class="wanted-stars" id="hud-wanted-stars">
+          <div class="wanted-star"></div>
+          <div class="wanted-star"></div>
+          <div class="wanted-star"></div>
+          <div class="wanted-star"></div>
+          <div class="wanted-star"></div>
+        </div>
+        <div class="weapon-hud" id="hud-weapon">
+          <div class="weapon-icon-container" id="hud-weapon-icon">
+            <svg class="weapon-icon-svg" viewBox="0 0 24 24"><path d="M7 11h10v2H7z"/></svg>
+          </div>
+          <div class="weapon-ammo" id="hud-weapon-ammo">
+            <span class="clip">30</span><span class="reserve">/ 300</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Center Mission Objective -->
+      <div class="mission-objective-bar" id="mission-objective-bar">
+        任务目标: 驾车前往好莱坞大道与莱斯特接头
+      </div>
+
+      <!-- Center Crosshairs & Hit Feedback -->
+      <div class="hud-center">
+        <div class="crosshair" id="crosshair"></div>
+        <div class="hitmarker" id="hitmarker"></div>
+        <div class="interaction-prompt" id="interaction-prompt">
+          <span class="key-badge" id="prompt-key">F</span>
+          <span id="prompt-text">进入 超跑 (PEGASSI ZENTORNO)</span>
+        </div>
+      </div>
+
+      <!-- Subtitles -->
+      <div class="subtitles-container" id="subtitles-container"></div>
+
+      <!-- Bottom Left Minimap & Status Bars -->
+      <div class="hud-bottom-left">
+        <div class="radar-container">
+          <canvas id="radar-canvas" width="220" height="150"></canvas>
+          <div class="radar-location-tag" id="radar-location">VINEWOOD BLVD</div>
+        </div>
+        <div class="status-bars">
+          <!-- Row 1: Health & Armor -->
+          <div class="bar-row">
+            <div class="bar-track"><div class="bar-fill health-fill" id="health-bar" style="width: 100%;"></div></div>
+            <div class="bar-track"><div class="bar-fill armor-fill" id="armor-bar" style="width: 100%;"></div></div>
+          </div>
+          <!-- Row 2: Stamina & Special Ability -->
+          <div class="bar-row">
+            <div class="bar-track"><div class="bar-fill stamina-fill" id="stamina-bar" style="width: 100%;"></div></div>
+            <div class="bar-track"><div class="bar-fill ability-fill" id="ability-bar" style="width: 100%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Right Speedometer -->
+      <div class="vehicle-speedometer" id="speedometer">
+        <span class="speed-value" id="speed-val">0</span>
+        <span class="speed-unit">KM/H</span>
+        <span class="vehicle-gear" id="gear-val">1ST</span>
+      </div>
+    </div>
+
+    <!-- GTA V RADIAL WEAPON WHEEL (TAB / Q) -->
+    <div id="weapon-wheel-overlay">
+      <div class="wheel-container" id="wheel-container">
+        <div class="wheel-center-info">
+          <div class="wheel-weapon-title" id="wheel-weapon-name">CARBINE RIFLE</div>
+          <div class="wheel-weapon-ammo" id="wheel-weapon-ammo">30 / 300</div>
+          <div class="wheel-stat-bar"><div class="wheel-stat-fill" id="wheel-stat-damage" style="width: 75%;"></div></div>
+          <div class="wheel-stat-bar"><div class="wheel-stat-fill" id="wheel-stat-rate" style="width: 80%;"></div></div>
+        </div>
+        <!-- 8 Weapon Slots positioned in circle -->
+        <div class="wheel-slot" data-weapon="fists" style="top: 20px; left: 195px;">
+          <span>拳头/近战</span>
+        </div>
+        <div class="wheel-slot" data-weapon="pistol" style="top: 65px; left: 320px;">
+          <span>手枪 (PISTOL)</span>
+        </div>
+        <div class="wheel-slot" data-weapon="smg" style="top: 195px; left: 370px;">
+          <span>微型冲锋枪</span>
+        </div>
+        <div class="wheel-slot" data-weapon="rifle" style="top: 325px; left: 320px;">
+          <span>卡宾突击步枪</span>
+        </div>
+        <div class="wheel-slot" data-weapon="shotgun" style="top: 370px; left: 195px;">
+          <span>泵动霰弹枪</span>
+        </div>
+        <div class="wheel-slot" data-weapon="rpg" style="top: 325px; left: 70px;">
+          <span>RPG火箭筒</span>
+        </div>
+        <div class="wheel-slot" data-weapon="grenade" style="top: 195px; left: 20px;">
+          <span>黏弹/手榴弹</span>
+        </div>
+        <div class="wheel-slot" data-weapon="sniper" style="top: 65px; left: 70px;">
+          <span>重型狙击枪</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- iFRUIT SMARTPHONE UI (M / P / Up Arrow) -->
+    <div id="phone-container">
+      <div class="phone-screen">
+        <div class="phone-status-bar">
+          <span id="phone-time">12:00</span>
+          <span>iFruit 5G</span>
+          <span>100% ⚡</span>
+        </div>
+        <div class="phone-header-title" id="phone-view-title">iFruit OS</div>
+
+        <!-- Phone App Grid -->
+        <div class="phone-grid" id="phone-home-grid">
+          <div class="phone-app-btn" data-app="contacts">
+            <div class="phone-app-icon">📞</div>
+            <div class="phone-app-name">通讯录</div>
+          </div>
+          <div class="phone-app-btn" data-app="cheats">
+            <div class="phone-app-icon">⚡</div>
+            <div class="phone-app-name">秘籍指令</div>
+          </div>
+          <div class="phone-app-btn" data-app="delivery">
+            <div class="phone-app-icon">🏎️</div>
+            <div class="phone-app-name">技工送车</div>
+          </div>
+          <div class="phone-app-btn" data-app="missions">
+            <div class="phone-app-icon">💼</div>
+            <div class="phone-app-name">差事清单</div>
+          </div>
+          <div class="phone-app-btn" data-app="radio">
+            <div class="phone-app-icon">📻</div>
+            <div class="phone-app-name">电台播放</div>
+          </div>
+          <div class="phone-app-btn" data-app="camera">
+            <div class="phone-app-icon">📷</div>
+            <div class="phone-app-name">自拍模式</div>
+          </div>
+        </div>
+
+        <!-- Phone App Subviews -->
+        <div class="phone-app-view" id="phone-view-contacts">
+          <button class="phone-back-btn" id="phone-back-btn">⬅ 返回</button>
+          <div class="phone-list-item" data-call="lester">💼 莱斯特 (消星/开启抢劫)</div>
+          <div class="phone-list-item" data-call="franklin">🎯 富兰克林 (暗杀差事)</div>
+          <div class="phone-list-item" data-call="mechanic">🔧 载具技工 (送车服务)</div>
+          <div class="phone-list-item" data-call="police">🚨 911 紧急电话</div>
+        </div>
+
+        <div class="phone-app-view" id="phone-view-cheats">
+          <button class="phone-back-btn">⬅ 返回</button>
+          <div class="phone-list-item" data-cheat="buzzard">🚁 刷出 秃鹰武装直升机</div>
+          <div class="phone-list-item" data-cheat="supercar">🏎️ 刷出 顶级超跑 (Zentorno)</div>
+          <div class="phone-list-item" data-cheat="godmode">🛡️ 无敌模式 (God Mode)</div>
+          <div class="phone-list-item" data-cheat="maxammo">🔫 全武器满弹药</div>
+          <div class="phone-list-item" data-cheat="clearwanted">⭐ 清除通缉星级</div>
+          <div class="phone-list-item" data-cheat="maxwanted">⭐⭐⭐⭐⭐ 5星特种追捕</div>
+          <div class="phone-list-item" data-cheat="weather">🌧️ 切换天气/时间</div>
+        </div>
+
+        <div class="phone-app-view" id="phone-view-delivery">
+          <button class="phone-back-btn">⬅ 返回</button>
+          <div class="phone-list-item" data-spawn="supercar">🏎️ 佩嘉西 桑托劳 (超跑)</div>
+          <div class="phone-list-item" data-spawn="muscle">🔥 威皮 统治者 (肌肉车)</div>
+          <div class="phone-list-item" data-spawn="bike">🏍️ 佩嘉西 巴蒂801 (重型摩托)</div>
+          <div class="phone-list-item" data-spawn="police">🚓 洛圣都警局 拦截巡逻车</div>
+          <div class="phone-list-item" data-spawn="heli">🚁 秃鹰 武装直升机</div>
+        </div>
+
+        <div class="phone-app-view" id="phone-view-missions">
+          <button class="phone-back-btn">⬅ 返回</button>
+          <div class="phone-list-item" data-mission="1">1. 回收行动 (Repo Man)</div>
+          <div class="phone-list-item" data-mission="2">2. 码头火拼 (Docks Bust)</div>
+          <div class="phone-list-item" data-mission="3">3. 午夜街头车赛 (Street Race)</div>
+          <div class="phone-list-item" data-mission="4">4. 花园银行大劫案 (The Big Heist)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AMMU-NATION WEAPON SHOP MODAL -->
+    <div class="shop-modal" id="ammunation-modal">
+      <div class="shop-header">
+        <div class="shop-title">武装国度 (AMMU-NATION)</div>
+        <button class="close-modal-btn" id="close-ammunation-btn">关闭 (ESC)</button>
+      </div>
+      <div class="shop-grid" id="ammunation-grid">
+        <!-- Weapon items generated in JS -->
+      </div>
+    </div>
+
+    <!-- LOS SANTOS CUSTOMS GARAGE MODAL -->
+    <div class="shop-modal" id="customs-modal">
+      <div class="shop-header">
+        <div class="shop-title">洛圣都改车王 (LOS SANTOS CUSTOMS)</div>
+        <button class="close-modal-btn" id="close-customs-btn">离开车库 (ESC)</button>
+      </div>
+      <div class="shop-grid" id="customs-grid">
+        <!-- Customs items generated in JS -->
+      </div>
+    </div>
+
+    <!-- RADIO STATION SELECTOR OVERLAY -->
+    <div id="radio-wheel-overlay">
+      <button class="radio-station-btn active" data-station="0">LOS SANTOS ROCK</button>
+      <button class="radio-station-btn" data-station="1">WEST COAST CLASSICS</button>
+      <button class="radio-station-btn" data-station="2">FLYLO FM</button>
+      <button class="radio-station-btn" data-station="3">RADIO LOS SANTOS</button>
+      <button class="radio-station-btn" data-station="-1">RADIO OFF</button>
+    </div>
+
+    <!-- CONTROLS GUIDE OVERLAY -->
+    <div id="controls-help">
+      <div style="font-weight:900; color:#fff; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:4px; margin-bottom:4px;">GTA 5 操作指南</div>
+      <div class="control-row"><span class="key">WASD</span><span>人物移动 / 驾驶载具</span></div>
+      <div class="control-row"><span class="key">鼠标</span><span>转动视角 / 瞄准</span></div>
+      <div class="control-row"><span class="key">左键 (LMB)</span><span>开火 / 近战格斗三连击</span></div>
+      <div class="control-row"><span class="key">右键 (RMB)</span><span>精准越肩瞄准 (ADS)</span></div>
+      <div class="control-row"><span class="key">F / Enter</span><span>进入/抢夺载具 / 离开</span></div>
+      <div class="control-row"><span class="key">Shift</span><span>疾跑 / 载具氮气加速</span></div>
+      <div class="control-row"><span class="key">Space</span><span>跳跃 / 载具手刹漂移</span></div>
+      <div class="control-row"><span class="key">TAB / Q</span><span>呼出 GTA 轮盘式武器库</span></div>
+      <div class="control-row"><span class="key">R</span><span>武器换弹</span></div>
+      <div class="control-row"><span class="key">G</span><span>投掷黏弹 / 引爆</span></div>
+      <div class="control-row"><span class="key">E</span><span>按喇叭 / 商店互动</span></div>
+      <div class="control-row"><span class="key">CapsLock</span><span>主角子弹时间特殊技能</span></div>
+      <div class="control-row"><span class="key">M / P / ↑</span><span>iFruit 智能手机</span></div>
+      <div class="control-row"><span class="key">H</span><span>切换车灯 / 警车警灯</span></div>
+    </div>
+
+    <!-- MISSION PASSED SCREEN -->
+    <div id="mission-passed-screen">
+      <div class="mission-passed-banner">
+        <div class="mission-passed-title">任务完成 (MISSION PASSED)</div>
+        <div class="mission-passed-sub" id="passed-mission-name">花园银行大劫案</div>
+      </div>
+      <div class="mission-reward-box">
+        <div class="reward-item">
+          <div class="reward-label">现金奖励</div>
+          <div class="reward-value" id="passed-reward-cash">+$500,000</div>
+        </div>
+        <div class="reward-item">
+          <div class="reward-label">声望 (RP)</div>
+          <div class="reward-value">⭐ +5000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WASTED / BUSTED SCREEN -->
+    <div id="wasted-screen">
+      <div class="wasted-text" id="wasted-text">WASTED</div>
+    </div>
+  </div>
+
+  <!-- Game Logic Modules -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
